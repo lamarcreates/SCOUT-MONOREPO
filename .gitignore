@@ -57,3 +57,4 @@ apps/frontend/.next
 # AWS
 *.pem
 deploy/*.pem
+.vercel
