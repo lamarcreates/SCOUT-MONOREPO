@@ -1,4 +1,5 @@
 import { OpenAIStream, StreamingTextResponse } from 'ai';
+import { mockVehicles, mockDealerships } from '@/lib/mock-data';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -6,13 +7,45 @@ export const maxDuration = 30;
 export async function POST(req: Request) {
   const { messages } = await req.json();
 
-  // Add system message to the beginning of messages if not present
+  // Create a detailed system message with our actual inventory
+  const vehicleList = mockVehicles.slice(0, 15).map(v => 
+    `- ${v.year} ${v.make} ${v.model} ($${v.price.toLocaleString()}) - ${v.type}, ${
+      v.mpg ? `${v.mpg.city}/${v.mpg.highway} MPG` : `${v.range} mile range`
+    }, ${v.stock} in stock`
+  ).join('\n');
+
+  const dealershipList = mockDealerships.map(d =>
+    `- ${d.name} (${d.distance}) - ${d.services.join(', ')}`
+  ).join('\n');
+
+  // Add system message with real inventory data
   const systemMessage = {
     role: 'system',
-    content: `You are Scout, an AI assistant for MotorScout.ai, an automotive dealership platform. 
-    You help customers find their perfect vehicle, schedule test drives, and answer questions about inventory.
-    Be friendly, knowledgeable, and focused on helping customers make informed decisions.
-    Keep responses concise and conversational.`
+    content: `You are Scout, an AI assistant for MotorScout.ai, an automotive dealership platform.
+    
+You help customers find their perfect vehicle, schedule test drives, and answer questions about inventory.
+
+CURRENT INVENTORY:
+${vehicleList}
+
+DEALERSHIP LOCATIONS:
+${dealershipList}
+
+TEST DRIVE AVAILABILITY:
+- Available 7 days a week
+- Appointments from 9:00 AM to 5:30 PM  
+- Can usually accommodate same-day or next-day requests
+- Multiple time slots available
+
+When users ask about:
+- Vehicles: Share specific models from our inventory with prices and features
+- Test drives: Offer to help schedule, ask for preferred date/time
+- Comparisons: Compare specific vehicles from our inventory
+- Availability: Confirm we have vehicles in stock and can schedule test drives
+
+Be friendly, knowledgeable, and focused on helping customers make informed decisions.
+Keep responses concise and conversational.
+Use the actual inventory data provided above.`
   };
 
   const allMessages = [systemMessage, ...messages];
