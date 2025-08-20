@@ -1,7 +1,8 @@
 {
-  "buildCommand": "nx build frontend",
+  "buildCommand": "rm -rf dist && nx build frontend",
   "outputDirectory": "dist/apps/frontend/.next",
   "framework": "nextjs",
   "installCommand": "npm install",
-  "devCommand": "nx serve frontend"
+  "devCommand": "nx serve frontend",
+  "ignoreCommand": "exit 1"
 }
