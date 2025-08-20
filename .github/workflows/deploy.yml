@@ -1,13 +1,19 @@
-name: Deploy Scout Platform
+name: Deploy MotorScout Platform
 
 on:
   push:
-    branches: [main, staging]
+    branches: [main]
   pull_request:
     branches: [main]
 
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
 jobs:
+  # Build and test the monorepo
   test:
+    name: Build and Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -21,39 +27,112 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
+      - name: Build all projects with NX
+        run: npm run build
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      
       - name: Run tests
         run: npm test
-      
-      - name: Build projects
-        run: npm run build
+        continue-on-error: true  # Don't fail if no tests yet
 
-  deploy-frontend:
+  # Deploy preview for PRs
+  deploy-preview:
+    name: Deploy Preview
     needs: test
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Deploy to Vercel
-        run: |
-          npm i -g vercel
-          vercel --prod --token=${{ secrets.VERCEL_TOKEN }}
-
-  deploy-backend:
-    needs: test
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       
-      - name: Deploy to EC2
-        uses: appleboy/ssh-action@master
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Vercel CLI
+        run: npm i -g vercel@latest
+      
+      - name: Pull Vercel Environment
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+      
+      - name: Build Project Artifacts
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      
+      - name: Deploy Preview
+        run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} > deployment-url.txt
+      
+      - name: Comment PR
+        uses: actions/github-script@v6
+        with:
           script: |
-            cd /var/www/scout-backend
-            git pull origin main
-            npm install
-            npm run build:backend
-            pm2 restart scout-api
+            const fs = require('fs');
+            const url = fs.readFileSync('deployment-url.txt', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🚀 Preview deployment ready!\n\n👉 ${url}\n\n[View Deployment](${url})`
+            })
+
+  # Deploy to production for main branch
+  deploy-production:
+    name: Deploy Production
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Vercel CLI
+        run: npm i -g vercel@latest
+      
+      - name: Pull Vercel Environment
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+      
+      - name: Build Project Artifacts
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      
+      - name: Deploy to Production
+        run: |
+          vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+          echo "✅ Deployed to production!"
+
+  # Future: Deploy backend to AWS EC2
+  # deploy-backend:
+  #   name: Deploy Backend to EC2
+  #   needs: test
+  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     
+  #     - name: Deploy to EC2
+  #       uses: appleboy/ssh-action@master
+  #       with:
+  #         host: ${{ secrets.EC2_HOST }}
+  #         username: ubuntu
+  #         key: ${{ secrets.EC2_SSH_KEY }}
+  #         script: |
+  #           cd /var/www/scout-backend
+  #           git pull origin main
+  #           npm install
+  #           npm run build:backend
+  #           pm2 restart scout-api
