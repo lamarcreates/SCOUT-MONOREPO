@@ -29,8 +29,6 @@ jobs:
       
       - name: Build all projects with NX
         run: npm run build
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       
       - name: Run tests
         run: npm test
@@ -62,8 +60,6 @@ jobs:
       
       - name: Build Project Artifacts
         run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       
       - name: Deploy Preview
         run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} > deployment-url.txt
@@ -107,8 +103,6 @@ jobs:
       
       - name: Build Project Artifacts
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       
       - name: Deploy to Production
         run: |

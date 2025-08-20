@@ -66,14 +66,13 @@ Go to your GitHub repository:
 2. Click **Secrets and variables** → **Actions**
 3. Click **New repository secret**
 
-Add these 4 secrets:
+Add these 3 secrets:
 
 | Secret Name | Value | Where to Get It |
 |------------|-------|-----------------|
 | `VERCEL_TOKEN` | `xxx...` | https://vercel.com/account/tokens |
-| `VERCEL_ORG_ID` | `team_xxx...` | From `.vercel/project.json` |
-| `VERCEL_PROJECT_ID` | `prj_xxx...` | From `.vercel/project.json` |
-| `OPENAI_API_KEY` | `sk-proj-xxx...` | Your OpenAI API key |
+| `VERCEL_ORG_ID` | `team_ZuiLHat9lG7VxNmfJbyWPKr4` | Already provided |
+| `VERCEL_PROJECT_ID` | `prj_JWSulHV96TNFiUhgfRqCUHI4aBjT` | Already provided |
 
 ### Step 3: Commit and Push
 
@@ -154,7 +153,7 @@ git push origin main
 
 ## Next Steps
 
-1. Add the 4 secrets to GitHub
+1. Add the 3 secrets to GitHub (only need VERCEL_TOKEN, ORG_ID, and PROJECT_ID)
 2. Push this commit to trigger first deployment
 3. Share repo with your team
 4. They can start deploying immediately!
