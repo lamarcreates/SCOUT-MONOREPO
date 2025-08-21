@@ -9,9 +9,9 @@ export async function POST(req: Request) {
 
   // Create a detailed system message with our actual inventory
   const vehicleList = mockVehicles.slice(0, 15).map(v => 
-    `- ${v.year} ${v.make} ${v.model} ($${v.price.toLocaleString()}) - ${v.type}, ${
+    `- ${v.year} ${v.make} ${v.model} (ID: ${v.id}) - $${v.price.toLocaleString()} - ${v.type}, ${
       v.mpg ? `${v.mpg.city}/${v.mpg.highway} MPG` : `${v.range} mile range`
-    }, ${v.stock} in stock`
+    }, ${v.stock} in stock, Image: ${v.image}`
   ).join('\n');
 
   const dealershipList = mockDealerships.map(d =>
@@ -42,10 +42,16 @@ When users ask about:
 - Test drives: Offer to help schedule, ask for preferred date/time
 - Comparisons: Compare specific vehicles from our inventory
 - Availability: Confirm we have vehicles in stock and can schedule test drives
+- Images: When discussing specific vehicles, include their images using markdown: ![Vehicle Name](image_url)
+
+IMPORTANT: When showing vehicles to users:
+1. Always include the vehicle image using markdown format: ![2024 Toyota RAV4](image_url)
+2. You can show multiple vehicle images when comparing or listing options
+3. Place images after describing the vehicle for better visual flow
 
 Be friendly, knowledgeable, and focused on helping customers make informed decisions.
 Keep responses concise and conversational.
-Use the actual inventory data provided above.`
+Use the actual inventory data provided above, including images when relevant.`
   };
 
   const allMessages = [systemMessage, ...messages];
