@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import type { InventoryResponse, VehicleSearchCriteria } from '@scout-workspace/types';
-import { mockVehicles } from '@scout-workspace/utils';
+import type { InventoryResponse, VehicleSearchCriteria } from '@/lib/tools-types';
+import { mockVehicles } from '@/lib/mock-data';
 
 export async function POST(req: Request) {
   try {

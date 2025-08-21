@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import type { AppointmentResponse, AppointmentRequest } from '@scout-workspace/types';
-import { createAppointment, getVehicleById, getDealershipById } from '@scout-workspace/utils';
+import type { AppointmentResponse, AppointmentRequest } from '@/lib/tools-types';
+import { createAppointment, getVehicleById, getDealershipById } from '@/lib/mock-data';
 
 export async function POST(req: Request) {
   try {

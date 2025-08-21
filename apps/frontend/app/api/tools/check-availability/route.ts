@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import type { AvailabilityResponse } from '@scout-workspace/types';
+import type { AvailabilityResponse } from '@/lib/tools-types';
 import { 
   getVehicleById, 
   getDealershipById, 
   generateTimeSlots,
   mockDealerships 
-} from '@scout-workspace/utils';
+} from '@/lib/mock-data';
 
 export async function POST(req: Request) {
   try {
