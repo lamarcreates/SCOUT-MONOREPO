@@ -12,24 +12,32 @@ import ReactMarkdown from 'react-markdown';
 // Component to render message content with markdown support
 function MessageContent({ content }: { content: string }) {
   return (
-    <div className="text-sm prose prose-sm max-w-none dark:prose-invert">
+    <div className="text-sm">
       <ReactMarkdown
         components={{
-          p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+          p: ({ children }) => <p className="mb-2 last:mb-0 break-words">{children}</p>,
           img: ({ src, alt }) => (
-            <img 
-              src={src} 
-              alt={alt || 'Vehicle image'} 
-              className="rounded-lg w-full max-w-[400px] h-auto my-2 mx-auto block"
-              style={{ maxHeight: '250px', objectFit: 'cover' }}
-            />
+            <div className="my-3 flex justify-center">
+              <img 
+                src={src} 
+                alt={alt || 'Vehicle image'} 
+                className="rounded-lg max-w-full"
+                style={{ 
+                  maxWidth: '280px',
+                  maxHeight: '200px', 
+                  objectFit: 'cover',
+                  width: '100%',
+                  height: 'auto'
+                }}
+              />
+            </div>
           ),
           ul: ({ children }) => <ul className="list-disc pl-4 mb-2">{children}</ul>,
           ol: ({ children }) => <ol className="list-decimal pl-4 mb-2">{children}</ol>,
-          li: ({ children }) => <li className="mb-1">{children}</li>,
+          li: ({ children }) => <li className="mb-1 break-words">{children}</li>,
           strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
           a: ({ href, children }) => (
-            <a href={href} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
+            <a href={href} className="text-primary hover:underline break-all" target="_blank" rel="noopener noreferrer">
               {children}
             </a>
           ),
@@ -115,11 +123,12 @@ export function ScoutChat() {
               )}
               
               <div
-                className={`rounded-lg px-4 py-2 max-w-[70%] break-words ${
+                className={`rounded-lg px-4 py-3 min-w-0 ${
                   message.role === 'user'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted overflow-x-auto'
+                    ? 'bg-primary text-primary-foreground max-w-[70%]'
+                    : 'bg-muted max-w-[85%]'
                 }`}
+                style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
               >
                 <MessageContent content={message.content} />
               </div>

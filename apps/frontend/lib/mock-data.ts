@@ -11,7 +11,7 @@ export const mockVehicles: Vehicle[] = [
     year: 2024,
     price: 35990,
     type: 'SUV',
-    image: 'https://images.unsplash.com/photo-1581540222194-0def2dda95b8?w=800&h=600&fit=crop',
+    image: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop', // Generic SUV
     mpg: { city: 41, highway: 38 },
     features: ['AWD', 'Toyota Safety Sense 2.5+', 'Blind Spot Monitor', 'Apple CarPlay'],
     available: true,
@@ -29,7 +29,7 @@ export const mockVehicles: Vehicle[] = [
     year: 2024,
     price: 33450,
     type: 'SUV',
-    image: 'https://images.unsplash.com/photo-1606611013016-969c19ba1be3?w=800&h=600&fit=crop', // White Honda CR-V
+    image: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=600&fit=crop', // Generic white SUV
     mpg: { city: 28, highway: 34 },
     features: ['Honda Sensing', 'Real Time AWD', 'Wireless Apple CarPlay', 'Remote Start'],
     available: true,
@@ -103,7 +103,7 @@ export const mockVehicles: Vehicle[] = [
     year: 2024,
     price: 32995,
     type: 'Hybrid',
-    image: 'https://images.unsplash.com/photo-1619682817481-e994891cd1f5?w=800&h=600&fit=crop', // Honda Accord
+    image: 'https://images.unsplash.com/photo-1550355291-bbee04a92027?w=800&h=600&fit=crop', // Generic sedan
     mpg: { city: 48, highway: 47 },
     features: ['Honda Sensing', 'Bose Audio', 'Wireless Charging', 'Head-Up Display'],
     available: true,
@@ -310,7 +310,7 @@ export const mockVehicles: Vehicle[] = [
     year: 2022,
     price: 23450,
     type: 'Sedan',
-    image: 'https://images.unsplash.com/photo-1590362891991-f776e747a588?w=800&h=600&fit=crop',
+    image: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=800&h=600&fit=crop', // Generic gray sedan
     mpg: { city: 31, highway: 40 },
     features: ['Honda Sensing', 'Sport Mode', 'Bose Audio'],
     available: true,
