@@ -20,8 +20,8 @@ function MessageContent({ content }: { content: string }) {
             <img 
               src={src} 
               alt={alt || 'Vehicle image'} 
-              className="rounded-lg max-w-full h-auto my-2"
-              style={{ maxHeight: '300px' }}
+              className="rounded-lg w-full max-w-[400px] h-auto my-2 mx-auto block"
+              style={{ maxHeight: '250px', objectFit: 'cover' }}
             />
           ),
           ul: ({ children }) => <ul className="list-disc pl-4 mb-2">{children}</ul>,
@@ -113,10 +113,10 @@ export function ScoutChat() {
               )}
               
               <div
-                className={`rounded-lg px-4 py-2 max-w-[80%] break-words overflow-hidden ${
+                className={`rounded-lg px-4 py-2 max-w-[70%] break-words ${
                   message.role === 'user'
                     ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted'
+                    : 'bg-muted overflow-x-auto'
                 }`}
               >
                 <MessageContent content={message.content} />

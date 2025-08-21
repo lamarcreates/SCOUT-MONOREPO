@@ -29,7 +29,7 @@ export const mockVehicles: Vehicle[] = [
     year: 2024,
     price: 33450,
     type: 'SUV',
-    image: 'https://images.unsplash.com/photo-1568844293986-8d0400bd4745?w=800&h=600&fit=crop',
+    image: 'https://images.unsplash.com/photo-1606611013016-969c19ba1be3?w=800&h=600&fit=crop', // White Honda CR-V
     mpg: { city: 28, highway: 34 },
     features: ['Honda Sensing', 'Real Time AWD', 'Wireless Apple CarPlay', 'Remote Start'],
     available: true,
@@ -103,7 +103,7 @@ export const mockVehicles: Vehicle[] = [
     year: 2024,
     price: 32995,
     type: 'Hybrid',
-    image: 'https://images.unsplash.com/photo-1603584173870-7f23fdae1b7a?w=800&h=600&fit=crop',
+    image: 'https://images.unsplash.com/photo-1619682817481-e994891cd1f5?w=800&h=600&fit=crop', // Honda Accord
     mpg: { city: 48, highway: 47 },
     features: ['Honda Sensing', 'Bose Audio', 'Wireless Charging', 'Head-Up Display'],
     available: true,
