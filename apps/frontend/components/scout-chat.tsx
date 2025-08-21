@@ -57,8 +57,10 @@ export function ScoutChat() {
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+    // Find the actual scrollable viewport element within ScrollArea
+    const scrollViewport = scrollAreaRef.current?.querySelector('[data-slot="scroll-area-viewport"]');
+    if (scrollViewport) {
+      scrollViewport.scrollTop = scrollViewport.scrollHeight;
     }
   }, [messages]);
 
@@ -82,7 +84,7 @@ export function ScoutChat() {
   }, [setInput]);
 
   return (
-    <Card className="flex flex-col h-[600px] w-full max-w-4xl mx-auto">
+    <Card className="flex flex-col h-[600px] w-full max-w-4xl mx-auto overflow-hidden">
       {/* Chat Header */}
       <div className="border-b p-4">
         <div className="flex items-center gap-2">
@@ -97,8 +99,8 @@ export function ScoutChat() {
       </div>
 
       {/* Messages Area */}
-      <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-        <div className="space-y-4">
+      <ScrollArea className="flex-1 p-4 overflow-y-auto" ref={scrollAreaRef}>
+        <div className="space-y-4 pb-4">
           {messages.map((message) => (
             <div
               key={message.id}
