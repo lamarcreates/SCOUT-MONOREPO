@@ -12,31 +12,32 @@ import ReactMarkdown from 'react-markdown';
 // Component to render message content with markdown support
 function MessageContent({ content }: { content: string }) {
   return (
-    <ReactMarkdown
-      className="text-sm prose prose-sm max-w-none dark:prose-invert"
-      components={{
-        p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-        img: ({ src, alt }) => (
-          <img 
-            src={src} 
-            alt={alt || 'Vehicle image'} 
-            className="rounded-lg max-w-full h-auto my-2"
-            style={{ maxHeight: '300px' }}
-          />
-        ),
-        ul: ({ children }) => <ul className="list-disc pl-4 mb-2">{children}</ul>,
-        ol: ({ children }) => <ol className="list-decimal pl-4 mb-2">{children}</ol>,
-        li: ({ children }) => <li className="mb-1">{children}</li>,
-        strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-        a: ({ href, children }) => (
-          <a href={href} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
-            {children}
-          </a>
-        ),
-      }}
-    >
-      {content}
-    </ReactMarkdown>
+    <div className="text-sm prose prose-sm max-w-none dark:prose-invert">
+      <ReactMarkdown
+        components={{
+          p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+          img: ({ src, alt }) => (
+            <img 
+              src={src} 
+              alt={alt || 'Vehicle image'} 
+              className="rounded-lg max-w-full h-auto my-2"
+              style={{ maxHeight: '300px' }}
+            />
+          ),
+          ul: ({ children }) => <ul className="list-disc pl-4 mb-2">{children}</ul>,
+          ol: ({ children }) => <ol className="list-decimal pl-4 mb-2">{children}</ol>,
+          li: ({ children }) => <li className="mb-1">{children}</li>,
+          strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+          a: ({ href, children }) => (
+            <a href={href} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
+              {children}
+            </a>
+          ),
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
   );
 }
 
