@@ -4,7 +4,7 @@ import { OpenAIStream, StreamingTextResponse } from 'ai';
 export const maxDuration = 30;
 
 // System prompt that teaches the AI about available tools
-const SYSTEM_PROMPT = `You are Scout, an AI assistant for MotorScout.ai.
+const SYSTEM_PROMPT = `You are Scout, an AI assistant for Scout.
 
 You help customers:
 - Search for vehicles

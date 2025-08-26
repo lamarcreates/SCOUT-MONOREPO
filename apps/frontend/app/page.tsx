@@ -26,7 +26,7 @@ export default function HomePage() {
         <nav className="flex items-center justify-between mb-16">
           <div className="flex items-center gap-2">
             <ScoutIcon className="h-10 w-10 text-primary" />
-            <span className="text-2xl font-bold">MotorScout.ai</span>
+            <span className="text-2xl font-bold">Scout.ai</span>
           </div>
           <div className="flex items-center gap-4">
             <Button variant="ghost" asChild>
@@ -47,7 +47,7 @@ export default function HomePage() {
             Your AI-Powered Automotive Assistant
           </h1>
           <p className="text-xl text-muted-foreground mb-8">
-            Experience the future of car shopping with MotorScout's intelligent platform. 
+            Experience the future of car shopping with Scout's intelligent platform. 
             Get personalized recommendations, schedule test drives, and find your perfect vehicle.
           </p>
           <div className="flex gap-4 justify-center">
@@ -73,7 +73,7 @@ export default function HomePage() {
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold mb-4">Everything You Need in One Platform</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            MotorScout combines cutting-edge AI with a comprehensive automotive platform
+            Scout combines cutting-edge AI with a comprehensive automotive platform
           </p>
         </div>
 
@@ -108,7 +108,7 @@ export default function HomePage() {
       {/* How It Works */}
       <section className="container mx-auto px-4 py-16 bg-card/50">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">How MotorScout Works</h2>
+          <h2 className="text-3xl font-bold mb-4">How Scout Works</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Your journey to finding the perfect vehicle in three simple steps
           </p>
@@ -176,7 +176,7 @@ export default function HomePage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ScoutIcon className="h-6 w-6 text-primary" />
-            <span className="font-semibold">MotorScout.ai</span>
+            <span className="font-semibold">Scout</span>
           </div>
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
             <Link href="/about" className="hover:text-foreground">About</Link>
@@ -186,7 +186,7 @@ export default function HomePage() {
           </div>
         </div>
         <div className="mt-8 text-center text-sm text-muted-foreground">
-          © 2025 MotorScout.ai - Powered by LLAMA 70B & OpenAI
+          © 2025 Scout - Powered by LLAMA 70B & OpenAI
         </div>
       </footer>
     </div>

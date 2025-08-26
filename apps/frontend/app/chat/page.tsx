@@ -21,7 +21,7 @@ export default function ChatPage() {
               >
                 <ArrowLeft className="h-5 w-5" />
                 <ScoutIcon className="h-8 w-8 text-primary" />
-                <span className="text-2xl font-bold text-foreground">MotorScout</span>
+                <span className="text-2xl font-bold text-foreground">Scout</span>
               </Link>
             </div>
             <div className="flex items-center gap-2">
