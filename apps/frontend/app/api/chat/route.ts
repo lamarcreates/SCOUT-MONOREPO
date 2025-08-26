@@ -202,3 +202,15 @@ export async function POST(req: Request) {
 
   return result.toAIStreamResponse();
 }
+
+// Handle CORS preflight or occasional OPTIONS requests gracefully
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
+}
