@@ -1,4 +1,4 @@
-import { streamText, convertToCoreMessages, tool } from 'ai';
+import { streamText, convertToCoreMessages, tool, LanguageModelV1 } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
 import {
@@ -37,9 +37,9 @@ export async function POST(req: Request) {
   };
 
   const modelName = process.env.AI_MODEL || 'gpt-4o-mini';
-
+  
   const result = await streamText({
-    model: openai(modelName),
+    model: openai(modelName) as unknown as LanguageModelV1,
     messages: convertToCoreMessages([systemMessage, ...filteredMessages]),
     temperature: 0.7,
     tools: {

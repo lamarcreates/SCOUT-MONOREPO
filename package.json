@@ -58,7 +58,7 @@
     "typescript-eslint": "^8.29.0"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.16",
+    "@ai-sdk/openai": "^2.0.22",
     "@ai-sdk/react": "^2.0.17",
     "@fastify/autoload": "~6.0.3",
     "@fastify/sensible": "~6.0.2",
