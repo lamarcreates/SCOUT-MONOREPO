@@ -1,12 +1,13 @@
 'use client';
 
 import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport, type UIMessage } from 'ai';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
 import { Send, Bot, User, Loader2 } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 
 // Component to render message content with markdown support
@@ -50,18 +51,24 @@ function MessageContent({ content }: { content: string }) {
 }
 
 export function ScoutChat() {
-  const { messages, input, handleInputChange, handleSubmit, isLoading, error, setInput } = useChat({
-    api: '/api/chat',
-    initialMessages: [
-      {
-        id: 'welcome',
-        role: 'assistant',
-        content: 'Hi! I\'m Scout, your automotive AI assistant. I can help you find the perfect vehicle, schedule test drives, or answer any questions about our inventory. How can I help you today?',
-      },
-    ],
+  const [input, setInput] = useState('');
+  const initialMessages: UIMessage[] = [
+    {
+      id: 'welcome',
+      role: 'assistant' as const,
+      parts: [{ type: 'text' as const, text: 'Hi! I\'m Scout, your automotive AI assistant. I can help you find the perfect vehicle, schedule test drives, or answer any questions about our inventory. How can I help you today?' }]
+    },
+  ];
+  
+  const { messages, sendMessage, status, error } = useChat({
+    transport: new DefaultChatTransport({
+      api: '/api/chat',
+    }),
+    messages: initialMessages,
   });
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const isLoading = status === 'streaming' || status === 'submitted';
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -90,6 +97,14 @@ export function ScoutChat() {
       window.removeEventListener('scout-chat-prompt' as any, handleQuickAction);
     };
   }, [setInput]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (input.trim() && !isLoading) {
+      sendMessage({ text: input });
+      setInput('');
+    }
+  };
 
   return (
     <Card className="flex flex-col h-[600px] w-full max-w-4xl mx-auto overflow-hidden">
@@ -130,7 +145,7 @@ export function ScoutChat() {
                 }`}
                 style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
               >
-                <MessageContent content={message.content} />
+                <MessageContent content={message.parts.map(part => part.type === 'text' ? part.text : '').join('')} />
               </div>
 
               {message.role === 'user' && (
@@ -165,7 +180,7 @@ export function ScoutChat() {
         <div className="flex gap-2">
           <Input
             value={input}
-            onChange={handleInputChange}
+            onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about vehicles, schedule a test drive, or get recommendations..."
             className="flex-1"
             disabled={isLoading}

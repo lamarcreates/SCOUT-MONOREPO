@@ -1,4 +1,4 @@
-import { StreamingTextResponse } from 'ai';
+import { createUIMessageStreamResponse } from 'ai';
 
 export async function POST(req: Request) {
   const { messages } = await req.json();
@@ -7,10 +7,17 @@ export async function POST(req: Request) {
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
-      controller.enqueue(encoder.encode('Hello from Scout AI!'));
+      // Create a properly formatted UI message stream chunk
+      const chunk = JSON.stringify({
+        type: 'text-delta',
+        id: 'test-message',
+        delta: 'Hello from Scout AI!'
+      }) + '\n';
+      
+      controller.enqueue(encoder.encode(chunk));
       controller.close();
     },
   });
 
-  return new StreamingTextResponse(stream);
+  return createUIMessageStreamResponse({ stream });
 }

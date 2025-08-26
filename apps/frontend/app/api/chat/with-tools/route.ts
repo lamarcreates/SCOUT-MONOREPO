@@ -1,4 +1,5 @@
-import { OpenAIStream, StreamingTextResponse } from 'ai';
+import { streamText } from 'ai';
+import { openai } from '@ai-sdk/openai';
 
 // Allow streaming responses up to 30 seconds  
 export const maxDuration = 30;
@@ -48,32 +49,13 @@ Be conversational and helpful. If someone asks about specific features or compar
 export async function POST(req: Request) {
   const { messages } = await req.json();
 
-  const systemMessage = {
-    role: 'system',
-    content: SYSTEM_PROMPT
-  };
-
-  const allMessages = [systemMessage, ...messages];
-
-  // Call OpenAI
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: 'gpt-3.5-turbo',
-      messages: allMessages,
-      temperature: 0.7,
-      stream: true,
-      max_tokens: 500,
-    }),
+  const result = streamText({
+    model: openai('gpt-3.5-turbo'),
+    system: SYSTEM_PROMPT,
+    messages,
+    temperature: 0.7,
+    maxOutputTokens: 500,
   });
 
-  // Convert the response into a friendly text-stream
-  const stream = OpenAIStream(response);
-
-  // Respond with the stream
-  return new StreamingTextResponse(stream);
+  return result.toUIMessageStreamResponse();
 }
