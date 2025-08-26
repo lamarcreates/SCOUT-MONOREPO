@@ -1,4 +1,4 @@
-import { streamText } from 'ai';
+import { streamText, convertToModelMessages } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { mockVehicles, mockDealerships } from '@/lib/mock-data';
 
@@ -68,31 +68,17 @@ Be friendly, knowledgeable, and focused on helping customers make informed decis
 Keep responses concise and conversational.
 Use the actual inventory data provided above, including images when relevant.`;
 
-    // Use streamText from AI SDK v5 with enhanced system prompt
+    // Convert UIMessages to ModelMessages and use streamText
     const result = streamText({
       model: openai('gpt-3.5-turbo'),
       system: systemPrompt,
-      messages: filteredMessages,
+      messages: convertToModelMessages(filteredMessages),
       temperature: 0.7,
+      maxOutputTokens: 500,
     });
 
-    // In v5, we need to manually create a streaming response from the text stream
-    const { textStream } = result;
-    const stream = new ReadableStream({
-      async start(controller) {
-        for await (const text of textStream) {
-          controller.enqueue(new TextEncoder().encode(text));
-        }
-        controller.close();
-      },
-    });
-    
-    return new Response(stream, {
-      headers: { 
-        'Content-Type': 'text/plain; charset=utf-8',
-        'X-Content-Type-Options': 'nosniff',
-      },
-    });
+    // Return the proper UI Message Stream response for useChat hook
+    return result.toUIMessageStreamResponse();
     
   } catch (error) {
     console.error('Chat API Error:', error);
