@@ -39,7 +39,7 @@ export async function POST(req: Request) {
   const modelName = process.env.AI_MODEL || 'gpt-4o-mini';
 
   const result = await streamText({
-    model: openai(modelName) as any,
+    model: openai(modelName),
     messages: convertToCoreMessages([systemMessage, ...filteredMessages]),
     temperature: 0.7,
     tools: {
