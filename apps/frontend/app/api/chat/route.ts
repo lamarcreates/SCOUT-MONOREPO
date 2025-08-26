@@ -9,7 +9,10 @@ import {
   createAppointment,
 } from '@/lib/mock-data';
 
-// Allow streaming responses up to 30 seconds
+// Force dynamic rendering to prevent static optimization
+export const dynamic = 'force-dynamic';
+
+// Allow streaming responses up to 30 seconds  
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
@@ -203,13 +206,31 @@ export async function POST(req: Request) {
   return result.toAIStreamResponse();
 }
 
+// Handle GET requests (for debugging and preventing 405 errors)
+export async function GET() {
+  return new Response(
+    JSON.stringify({ 
+      message: 'Scout Chat API', 
+      status: 'operational',
+      info: 'This endpoint accepts POST requests for chat interactions',
+      timestamp: new Date().toISOString()
+    }),
+    {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+}
+
 // Handle CORS preflight or occasional OPTIONS requests gracefully
 export async function OPTIONS() {
   return new Response(null, {
     status: 200,
     headers: {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     },
   });
