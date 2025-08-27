@@ -1,5 +1,4 @@
 import { streamText, stepCountIs } from 'ai';
-import { openai } from '@ai-sdk/openai';
 import { mockVehicles, mockDealerships } from '@/lib/mock-data';
 import { checkAvailability, scheduleAppointment, searchInventory } from './tools';
 
@@ -100,14 +99,23 @@ IMPORTANT: When showing vehicles to users:
 Be friendly, knowledgeable, and guide customers through the booking process step by step.
 Keep responses concise and conversational.`;
 
-    // Use GPT-4o for enhanced reasoning and tool orchestration
-    // Note: GPT-5 requires AI Gateway authentication - falling back to GPT-4o
+    // Use GPT-5 with reasoning capabilities via Vercel AI Gateway
     const result = streamText({
-      model: openai('gpt-4o'),  // Using GPT-4o for better tool handling than GPT-3.5
+      model: "openai/gpt-5",  // GPT-5 with advanced reasoning via AI Gateway
+      apiKey: process.env.AI_GATEWAY_API_KEY,  // Provide AI Gateway API key
       system: systemPrompt,
       messages: filteredMessages,
       temperature: 0.7,
       maxOutputTokens: 500,
+      // GPT-5 specific settings for reasoning
+      experimental_providerOptions: {
+        reasoning: {
+          effort: "medium",  // medium reasoning for balanced performance
+        },
+        text: {
+          verbosity: "low",  // concise responses for chat interface
+        },
+      },
       tools: {
         checkAvailability,
         scheduleAppointment,

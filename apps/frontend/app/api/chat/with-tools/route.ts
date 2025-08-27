@@ -1,5 +1,4 @@
 import { streamText, stepCountIs } from 'ai';
-import { openai } from '@ai-sdk/openai';
 import { checkAvailability, scheduleAppointment, searchInventory } from '../tools';
 import { mockVehicles, mockDealerships } from '@/lib/mock-data';
 
@@ -57,9 +56,10 @@ export async function POST(req: Request) {
       (m: any) => !(m.id === 'welcome' && m.role === 'assistant')
     );
 
-    // Use GPT-4o for enhanced reasoning and tool orchestration
+    // Use GPT-5 with enhanced reasoning and tool orchestration
     const result = streamText({
-      model: openai('gpt-4o'),  // GPT-4o for better tool handling
+      model: "openai/gpt-5",  // GPT-5 with advanced reasoning via AI Gateway
+      apiKey: process.env.AI_GATEWAY_API_KEY,  // Provide AI Gateway API key
       system: SYSTEM_PROMPT,
       messages: filteredMessages,
       temperature: 0.7,
