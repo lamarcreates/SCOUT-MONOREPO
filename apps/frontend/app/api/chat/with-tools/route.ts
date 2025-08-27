@@ -1,61 +1,104 @@
-import { streamText } from 'ai';
+import { streamText, stepCountIs } from 'ai';
 import { openai } from '@ai-sdk/openai';
+import { checkAvailability, scheduleAppointment, searchInventory } from '../tools';
+import { mockVehicles, mockDealerships } from '@/lib/mock-data';
 
 // Allow streaming responses up to 30 seconds  
 export const maxDuration = 30;
 
-// System prompt that teaches the AI about available tools
-const SYSTEM_PROMPT = `You are Scout, an AI assistant for Scout.
+// System prompt that teaches the AI about available tools and how to use them
+const SYSTEM_PROMPT = `You are Scout, an AI assistant for MotorScout.ai.
 
 You help customers:
-- Search for vehicles
+- Search for vehicles in our inventory
 - Check availability for test drives  
-- Schedule appointments
-- Answer questions about inventory
+- Schedule appointments (test drives, service, consultations)
+- Answer questions about vehicles and dealerships
 
-When users ask about vehicles or availability, provide helpful responses based on these example vehicles we have available:
+When helping with scheduling:
+1. First help them find a vehicle they're interested in (if for test drive)
+2. Use the checkAvailability tool to see available times
+3. Collect required customer information (name, email, phone)
+4. Use the scheduleAppointment tool to book
+5. Provide clear confirmation with the confirmation number
 
-SUVs:
-- 2024 Toyota RAV4 Hybrid ($35,990) - AWD, 41/38 MPG, 5 in stock
-- 2024 Honda CR-V ($33,450) - AWD, 28/34 MPG, 3 in stock
-- 2024 Ford Explorer ($42,870) - 4WD, 3rd row, 21/28 MPG, 2 in stock
-- 2024 Mazda CX-5 ($29,900) - AWD, 25/31 MPG, 4 in stock
+Available Dealerships:
+${mockDealerships.map(d => `- ${d.name} (ID: ${d.id}): ${d.address}, ${d.distance}`).join('\n')}
 
-Sedans/Hybrids:
-- 2024 Toyota Camry Hybrid ($28,545) - 51/53 MPG, 6 in stock
-- 2024 Honda Accord Hybrid ($32,995) - 48/47 MPG, 3 in stock
-- 2024 BMW 330i ($44,295) - xDrive AWD, 26/36 MPG, 2 in stock
+Current Inventory Summary:
+- ${mockVehicles.filter(v => v.type === 'SUV').length} SUVs available
+- ${mockVehicles.filter(v => v.type === 'Sedan').length} Sedans available  
+- ${mockVehicles.filter(v => v.type === 'Electric').length} Electric vehicles
+- ${mockVehicles.filter(v => v.type === 'Hybrid').length} Hybrids
+- Prices ranging from $${Math.min(...mockVehicles.map(v => v.price)).toLocaleString()} to $${Math.max(...mockVehicles.map(v => v.price)).toLocaleString()}
 
-Electric Vehicles:
-- 2024 Tesla Model 3 ($42,990) - 272 mile range, 4 in stock
-- 2024 Tesla Model Y ($52,990) - 310 mile range, AWD, 3 in stock
-- 2024 Ford Mustang Mach-E ($45,995) - 250 mile range, AWD, 2 in stock
-- 2024 Hyundai Ioniq 5 ($41,450) - 266 mile range, AWD, 3 in stock
+When discussing vehicles, always mention:
+- Year, Make, Model
+- Price
+- Key features (MPG or range for EVs)
+- Availability status
+- Vehicle ID when scheduling
 
-Trucks:
-- 2024 Ford F-150 Lightning ($62,995) - Electric, 240 mile range, 2 in stock
-- 2024 Chevrolet Silverado 1500 ($38,395) - 4WD, 18/24 MPG, 4 in stock
-
-For test drives:
-- Available 7 days a week
-- Appointments from 9:00 AM to 5:30 PM
-- Multiple dealership locations available
-- Usually can accommodate same-day or next-day requests
-
-To schedule: Ask for their preferred date/time and contact information.
-
-Be conversational and helpful. If someone asks about specific features or comparisons, provide detailed information.`;
+Be helpful, conversational, and guide users through the booking process step by step.`;
 
 export async function POST(req: Request) {
-  const { messages } = await req.json();
+  try {
+    const { messages } = await req.json();
+    
+    if (!process.env.OPENAI_API_KEY) {
+      return new Response(
+        JSON.stringify({ error: 'Missing OPENAI_API_KEY' }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
-  const result = streamText({
-    model: openai('gpt-3.5-turbo'),
-    system: SYSTEM_PROMPT,
-    messages,
-    temperature: 0.7,
-    maxOutputTokens: 500,
-  });
+    // Filter out any welcome messages from the client
+    const filteredMessages = messages.filter(
+      (m: any) => !(m.id === 'welcome' && m.role === 'assistant')
+    );
 
-  return result.toUIMessageStreamResponse();
+    // Use streamText with tools
+    const result = streamText({
+      model: openai('gpt-3.5-turbo'),
+      system: SYSTEM_PROMPT,
+      messages: filteredMessages,
+      temperature: 0.7,
+      maxOutputTokens: 500,
+      tools: {
+        checkAvailability,
+        scheduleAppointment,
+        searchInventory,
+      },
+      stopWhen: stepCountIs(3), // Allow multiple tool calls in sequence
+    });
+
+    // Return the proper UI Message Stream response
+    return result.toUIMessageStreamResponse();
+    
+  } catch (error) {
+    console.error('Chat API Error:', error);
+    return new Response(
+      JSON.stringify({ 
+        error: 'Internal server error', 
+        details: error instanceof Error ? error.message : 'Unknown error' 
+      }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+}
+
+// Handle GET for debugging
+export async function GET() {
+  return new Response(
+    JSON.stringify({ 
+      status: 'ok',
+      message: 'Chat API with tools running - supports scheduling',
+      tools: ['checkAvailability', 'scheduleAppointment', 'searchInventory'],
+      version: 'v1.0.0'
+    }),
+    { 
+      status: 200, 
+      headers: { 'Content-Type': 'application/json' } 
+    }
+  );
 }

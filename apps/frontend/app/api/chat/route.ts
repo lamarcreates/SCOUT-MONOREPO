@@ -1,6 +1,7 @@
-import { streamText, convertToModelMessages } from 'ai';
+import { streamText, stepCountIs } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { mockVehicles, mockDealerships } from '@/lib/mock-data';
+import { checkAvailability, scheduleAppointment, searchInventory } from './tools';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -10,7 +11,8 @@ export const maxDuration = 30;
 
 export async function POST(req: Request) {
   try {
-    const { messages } = await req.json();
+    const body = await req.json();
+    const messages = body.messages || [];
     
     if (!process.env.OPENAI_API_KEY) {
       return new Response(
@@ -20,9 +22,12 @@ export async function POST(req: Request) {
     }
 
     // Filter out any welcome messages from the client
-    const filteredMessages = messages.filter(
-      (m: any) => !(m.id === 'welcome' && m.role === 'assistant')
-    );
+    const filteredMessages = messages && messages.length > 0 
+      ? messages.filter((m: any) => !(m.id === 'welcome' && m.role === 'assistant'))
+      : [];
+
+    console.log('Received messages:', JSON.stringify(messages, null, 2));
+    console.log('Filtered messages:', JSON.stringify(filteredMessages, null, 2));
 
     // Create a detailed vehicle inventory list with images
     const vehicleList = mockVehicles.slice(0, 15).map(v => 
@@ -40,6 +45,19 @@ export async function POST(req: Request) {
     
 You help customers find their perfect vehicle, schedule test drives, and answer questions about inventory.
 
+SCHEDULING CAPABILITIES:
+You can now help customers:
+1. Check availability for test drives using the checkAvailability tool
+2. Schedule appointments using the scheduleAppointment tool
+3. Search inventory using the searchInventory tool
+
+When helping with scheduling:
+- First help them find a vehicle they're interested in
+- Use checkAvailability to see available times
+- Collect customer information (name, email, phone)
+- Use scheduleAppointment to book
+- Provide confirmation number
+
 CURRENT INVENTORY:
 ${vehicleList}
 
@@ -54,27 +72,32 @@ TEST DRIVE AVAILABILITY:
 
 When users ask about:
 - Vehicles: Share specific models from our inventory with prices and features
-- Test drives: Offer to help schedule, ask for preferred date/time
+- Test drives: Use the checkAvailability tool to find open slots
+- Booking: Use the scheduleAppointment tool to confirm bookings
 - Comparisons: Compare specific vehicles from our inventory
-- Availability: Confirm we have vehicles in stock and can schedule test drives
 - Images: When discussing specific vehicles, include their images using markdown: ![Vehicle Name](image_url)
 
 IMPORTANT: When showing vehicles to users:
 1. Always include the vehicle image using markdown format: ![2024 Toyota RAV4](image_url)
-2. You can show multiple vehicle images when comparing or listing options
+2. Include the vehicle ID when discussing scheduling
 3. Place images after describing the vehicle for better visual flow
 
-Be friendly, knowledgeable, and focused on helping customers make informed decisions.
-Keep responses concise and conversational.
-Use the actual inventory data provided above, including images when relevant.`;
+Be friendly, knowledgeable, and guide customers through the booking process step by step.
+Keep responses concise and conversational.`;
 
-    // Convert UIMessages to ModelMessages and use streamText
+    // Convert UIMessages to ModelMessages and use streamText with tools
     const result = streamText({
       model: openai('gpt-3.5-turbo'),
       system: systemPrompt,
-      messages: convertToModelMessages(filteredMessages),
+      messages: filteredMessages,
       temperature: 0.7,
       maxOutputTokens: 500,
+      tools: {
+        checkAvailability,
+        scheduleAppointment,
+        searchInventory,
+      },
+      stopWhen: stepCountIs(3), // Allow multiple tool calls in sequence
     });
 
     // Return the proper UI Message Stream response for useChat hook
