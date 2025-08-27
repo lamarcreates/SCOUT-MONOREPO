@@ -1,4 +1,5 @@
-import { streamText, stepCountIs } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { convertToModelMessages, streamText, stepCountIs } from 'ai';
 import { checkAvailability, scheduleAppointment, searchInventory } from '../tools';
 import { mockVehicles, mockDealerships } from '@/lib/mock-data';
 
@@ -42,6 +43,7 @@ Be helpful, conversational, and guide users through the booking process step by 
 
 export async function POST(req: Request) {
   try {
+    // Receive UI messages from the client
     const { messages } = await req.json();
     
     if (!process.env.OPENAI_API_KEY) {
@@ -51,17 +53,14 @@ export async function POST(req: Request) {
       );
     }
 
-    // Filter out any welcome messages from the client
-    const filteredMessages = messages.filter(
-      (m: any) => !(m.id === 'welcome' && m.role === 'assistant')
-    );
+    // Convert the UI messages to the ModelMessage format
+    const modelMessages = convertToModelMessages(messages);
 
-    // Use GPT-5 with enhanced reasoning and tool orchestration
-    // AI Gateway authenticates via AI_GATEWAY_API_KEY environment variable
+    // Call the streamText function with the converted messages
     const result = streamText({
-      model: "openai/gpt-5",  // GPT-5 with advanced reasoning via AI Gateway
+      model: openai('gpt-3.5-turbo'),  // Temporarily using GPT-3.5 until GPT-5 org verification
       system: SYSTEM_PROMPT,
-      messages: filteredMessages,
+      messages: modelMessages,
       temperature: 0.7,
       maxOutputTokens: 500,
       tools: {
@@ -72,7 +71,7 @@ export async function POST(req: Request) {
       stopWhen: stepCountIs(5), // Allow more steps for GPT-5's reasoning
     });
 
-    // Return the proper UI Message Stream response
+    // Return the streamable UI message response
     return result.toUIMessageStreamResponse();
     
   } catch (error) {

@@ -1,4 +1,5 @@
-import { streamText, stepCountIs } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { convertToModelMessages, streamText, stepCountIs } from 'ai';
 import { mockVehicles, mockDealerships } from '@/lib/mock-data';
 import { checkAvailability, scheduleAppointment, searchInventory } from './tools';
 
@@ -10,8 +11,8 @@ export const maxDuration = 30;
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const messages = body.messages || [];
+    // Receive UI messages from the client
+    const { messages } = await req.json();
     
     if (!process.env.OPENAI_API_KEY) {
       return new Response(
@@ -20,13 +21,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Filter out any welcome messages from the client
-    const filteredMessages = messages && messages.length > 0 
-      ? messages.filter((m: any) => !(m.id === 'welcome' && m.role === 'assistant'))
-      : [];
-
     console.log('Received messages:', JSON.stringify(messages, null, 2));
-    console.log('Filtered messages:', JSON.stringify(filteredMessages, null, 2));
 
     // Create a detailed vehicle inventory list with images
     const vehicleList = mockVehicles.slice(0, 15).map(v => 
@@ -99,12 +94,23 @@ IMPORTANT: When showing vehicles to users:
 Be friendly, knowledgeable, and guide customers through the booking process step by step.
 Keep responses concise and conversational.`;
 
-    // Use GPT-5 with reasoning capabilities via Vercel AI Gateway
-    // AI Gateway authenticates via AI_GATEWAY_API_KEY environment variable
+    // Convert the UI messages to the ModelMessage format
+    // Handle both direct messages and potential undefined case
+    let modelMessages;
+    try {
+      modelMessages = messages && messages.length > 0 ? convertToModelMessages(messages) : [];
+    } catch (conversionError) {
+      console.error('Error converting messages:', conversionError);
+      console.error('Messages structure:', JSON.stringify(messages, null, 2));
+      // Fallback to direct usage if conversion fails
+      modelMessages = messages || [];
+    }
+
+    // Call the streamText function with the converted messages
     const result = streamText({
-      model: "openai/gpt-5",  // GPT-5 with advanced reasoning via AI Gateway
+      model: openai('gpt-3.5-turbo'),  // Temporarily using GPT-3.5 until GPT-5 org verification
       system: systemPrompt,
-      messages: filteredMessages,
+      messages: modelMessages,
       temperature: 0.7,
       maxOutputTokens: 500,
       tools: {
@@ -115,7 +121,7 @@ Keep responses concise and conversational.`;
       stopWhen: stepCountIs(5), // Allow more steps for GPT-5's reasoning
     });
 
-    // Return the proper UI Message Stream response for useChat hook
+    // Return the streamable UI message response
     return result.toUIMessageStreamResponse();
     
   } catch (error) {
