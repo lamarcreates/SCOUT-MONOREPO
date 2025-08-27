@@ -57,9 +57,9 @@ export async function POST(req: Request) {
     );
 
     // Use GPT-5 with enhanced reasoning and tool orchestration
+    // AI Gateway authenticates via AI_GATEWAY_API_KEY environment variable
     const result = streamText({
       model: "openai/gpt-5",  // GPT-5 with advanced reasoning via AI Gateway
-      apiKey: process.env.AI_GATEWAY_API_KEY,  // Provide AI Gateway API key
       system: SYSTEM_PROMPT,
       messages: filteredMessages,
       temperature: 0.7,

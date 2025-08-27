@@ -100,22 +100,13 @@ Be friendly, knowledgeable, and guide customers through the booking process step
 Keep responses concise and conversational.`;
 
     // Use GPT-5 with reasoning capabilities via Vercel AI Gateway
+    // AI Gateway authenticates via AI_GATEWAY_API_KEY environment variable
     const result = streamText({
       model: "openai/gpt-5",  // GPT-5 with advanced reasoning via AI Gateway
-      apiKey: process.env.AI_GATEWAY_API_KEY,  // Provide AI Gateway API key
       system: systemPrompt,
       messages: filteredMessages,
       temperature: 0.7,
       maxOutputTokens: 500,
-      // GPT-5 specific settings for reasoning
-      experimental_providerOptions: {
-        reasoning: {
-          effort: "medium",  // medium reasoning for balanced performance
-        },
-        text: {
-          verbosity: "low",  // concise responses for chat interface
-        },
-      },
       tools: {
         checkAvailability,
         scheduleAppointment,
