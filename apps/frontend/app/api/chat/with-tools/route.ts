@@ -57,9 +57,9 @@ export async function POST(req: Request) {
       (m: any) => !(m.id === 'welcome' && m.role === 'assistant')
     );
 
-    // Use streamText with tools
+    // Use GPT-4o for enhanced reasoning and tool orchestration
     const result = streamText({
-      model: openai('gpt-3.5-turbo'),
+      model: openai('gpt-4o'),  // GPT-4o for better tool handling
       system: SYSTEM_PROMPT,
       messages: filteredMessages,
       temperature: 0.7,
@@ -69,7 +69,7 @@ export async function POST(req: Request) {
         scheduleAppointment,
         searchInventory,
       },
-      stopWhen: stepCountIs(3), // Allow multiple tool calls in sequence
+      stopWhen: stepCountIs(5), // Allow more steps for GPT-5's reasoning
     });
 
     // Return the proper UI Message Stream response
