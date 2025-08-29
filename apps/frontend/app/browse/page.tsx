@@ -301,10 +301,15 @@ export default function BrowsePage() {
                   <div className="relative">
                     <Image
                       src={car.image || "/placeholder.svg"}
-                      alt={`${car.year} ${car.make} ${car.model}`}
+                      alt={`${car.year} ${car.make ?? ""} ${car.model ?? ""}`}
                       width={300}
                       height={200}
                       className="w-full h-48 object-cover rounded-t-lg"
+                      onError={(e) => {
+                        const img = e.currentTarget as HTMLImageElement
+                        img.onerror = null
+                        img.src = "/placeholder.svg"
+                      }}
                     />
                     <Button
                       variant="ghost"

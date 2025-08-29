@@ -16,22 +16,20 @@ function MessageContent({ content }: { content: string }) {
     <div className="text-sm">
       <ReactMarkdown
         components={{
-          p: ({ children }) => <p className="mb-2 last:mb-0 break-words">{children}</p>,
+          p: ({ children }) => <div className="mb-2 last:mb-0 break-words">{children}</div>,
           img: ({ src, alt }) => (
-            <div className="my-3 flex justify-center">
-              <img 
-                src={src} 
-                alt={alt || 'Vehicle image'} 
-                className="rounded-lg max-w-full"
-                style={{ 
-                  maxWidth: '280px',
-                  maxHeight: '200px', 
-                  objectFit: 'cover',
-                  width: '100%',
-                  height: 'auto'
-                }}
-              />
-            </div>
+            <img
+              src={src}
+              alt={alt || 'Vehicle image'}
+              className="rounded-lg max-w-full my-3"
+              style={{
+                maxWidth: '280px',
+                maxHeight: '200px',
+                objectFit: 'cover',
+                width: '100%',
+                height: 'auto'
+              }}
+            />
           ),
           ul: ({ children }) => <ul className="list-disc pl-4 mb-2">{children}</ul>,
           ol: ({ children }) => <ol className="list-decimal pl-4 mb-2">{children}</ol>,

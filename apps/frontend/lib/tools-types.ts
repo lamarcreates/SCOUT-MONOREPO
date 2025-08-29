@@ -8,6 +8,13 @@ export interface Vehicle {
   price: number;
   type: 'SUV' | 'Sedan' | 'Truck' | 'Electric' | 'Hybrid' | 'Coupe' | 'Minivan';
   image: string;
+  latitude?: number;
+  longitude?: number;
+  dealerId?: string;
+  dealerName?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
   mpg?: {
     city: number;
     highway: number;
@@ -107,6 +114,9 @@ export interface InventoryResponse {
     type?: string;
     priceMin?: number;
     priceMax?: number;
+    latitude?: number;
+    longitude?: number;
+    radiusMiles?: number;
   };
   message?: string;
 }
@@ -126,6 +136,9 @@ export interface VehicleSearchCriteria {
   condition?: Vehicle['condition'];
   mpgMin?: number;
   mileageMax?: number;
+  latitude?: number;
+  longitude?: number;
+  radiusMiles?: number; // search radius in miles
 }
 
 export interface AppointmentRequest {

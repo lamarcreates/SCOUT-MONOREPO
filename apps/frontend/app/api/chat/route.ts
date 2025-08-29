@@ -1,6 +1,6 @@
 import { openai } from '@ai-sdk/openai';
 import { convertToModelMessages, streamText, stepCountIs } from 'ai';
-import { mockVehicles, mockDealerships } from '@/lib/mock-data';
+import { mockDealerships } from '@/lib/mock-data';
 import { checkAvailability, scheduleAppointment, searchInventory } from './tools';
 
 // Force dynamic rendering
@@ -23,13 +23,6 @@ export async function POST(req: Request) {
 
     console.log('Received messages:', JSON.stringify(messages, null, 2));
 
-    // Create a detailed vehicle inventory list with images
-    const vehicleList = mockVehicles.slice(0, 15).map(v => 
-      `- ${v.year} ${v.make} ${v.model} (ID: ${v.id}) - $${v.price.toLocaleString()} - ${v.type}, ${
-        v.mpg ? `${v.mpg.city}/${v.mpg.highway} MPG` : `${v.range} mile range`
-      }, ${v.stock} in stock, Image: ${v.image}`
-    ).join('\n');
-
     const dealershipList = mockDealerships.map(d =>
       `- ${d.name} (${d.distance}) - ${d.services.join(', ')}`
     ).join('\n');
@@ -40,7 +33,7 @@ export async function POST(req: Request) {
 You help customers find their perfect vehicle, schedule test drives, and answer questions about inventory.
 
 IMPORTANT: You have access to tools that you MUST use when appropriate:
-1. searchInventory - ALWAYS use this when a customer mentions a specific vehicle or asks about inventory
+1. searchInventory - ALWAYS use this when a customer asks about inventory. If they mention a general area (e.g., "Chantilly, VA"), pass it as 'location'. If they share a ZIP, pass it as 'zip'. You may also pass 'latitude'/'longitude' when available.
 2. checkAvailability - Use this after a vehicle is selected to check test drive slots
 3. scheduleAppointment - Use this to finalize bookings after collecting customer information
 
@@ -67,10 +60,11 @@ Step 5: Confirm the booking:
 
 Before calling any tool, briefly explain what you're doing (e.g., "Let me search our inventory for Toyota RAV4 vehicles...")
 
-CURRENT INVENTORY:
-${vehicleList}
+LOCATION HANDLING:
+- If the user has not provided location, ask for either a city/state, ZIP, or share location to search nearby inventory.
+- Use searchInventory with either coordinates (latitude/longitude) or location string; it will handle geocoding.
 
-DEALERSHIP LOCATIONS:
+DEALERSHIP LOCATIONS (static reference):
 ${dealershipList}
 
 TEST DRIVE AVAILABILITY:
@@ -90,6 +84,8 @@ IMPORTANT: When showing vehicles to users:
 1. Always include the vehicle image using markdown format: ![2024 Toyota RAV4](image_url)
 2. Include the vehicle ID when discussing scheduling
 3. Place images after describing the vehicle for better visual flow
+
+Do NOT assume a fixed list of vehicles in context — always call searchInventory to retrieve results for the user's query.
 
 Be friendly, knowledgeable, and guide customers through the booking process step by step.
 Keep responses concise and conversational.`;

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
@@ -180,6 +181,60 @@ const adminData = {
 export default function AdminDashboard() {
   const [selectedTab, setSelectedTab] = useState("overview")
   const [searchQuery, setSearchQuery] = useState("")
+  const [testLocation, setTestLocation] = useState("Austin, TX")
+  const [radius, setRadius] = useState(25)
+  const [make, setMake] = useState("")
+  const [model, setModel] = useState("")
+  const [loadingListings, setLoadingListings] = useState(false)
+  const [listings, setListings] = useState<any[]>([])
+  const [listingsError, setListingsError] = useState<string | null>(null)
+
+  async function geocode(address: string): Promise<{ lat: number; lon: number } | null> {
+    try {
+      const res = await fetch(`/api/geocode`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address })
+      })
+      if (!res.ok) return null
+      const data = await res.json()
+      if (typeof data?.latitude === 'number' && typeof data?.longitude === 'number') {
+        return { lat: data.latitude, lon: data.longitude }
+      }
+      return null
+    } catch {
+      return null
+    }
+  }
+
+  async function runListingsTest() {
+    setLoadingListings(true)
+    setListingsError(null)
+    setListings([])
+    try {
+      let coords = await geocode(testLocation)
+      if (!coords) throw new Error('Failed to geocode location')
+      const res = await fetch(`/api/tools/listings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          latitude: coords.lat,
+          longitude: coords.lon,
+          radiusMiles: radius,
+          make: make || undefined,
+          model: model || undefined,
+          limit: 24
+        })
+      })
+      if (!res.ok) throw new Error('Request failed')
+      const data = await res.json()
+      setListings(Array.isArray(data.vehicles) ? data.vehicles : [])
+    } catch (e: any) {
+      setListingsError(e?.message || 'Failed to fetch listings')
+    } finally {
+      setLoadingListings(false)
+    }
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -249,12 +304,13 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:grid-cols-6">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="appointments">Appointments</TabsTrigger>
             <TabsTrigger value="customers">Customers</TabsTrigger>
             <TabsTrigger value="inventory">Inventory</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="listings">Listings Tester</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -728,6 +784,64 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="listings" className="space-y-6">
+            <Card className="border-border">
+              <CardHeader>
+                <CardTitle>Listings Tester</CardTitle>
+                <CardDescription>Provider: MarketCheck — query live vehicle listings</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <label className="text-sm">Location</label>
+                    <Input value={testLocation} onChange={(e) => setTestLocation(e.target.value)} placeholder="City, State or Address" />
+                  </div>
+                  <div>
+                    <label className="text-sm">Radius (miles)</label>
+                    <Input type="number" value={radius} onChange={(e) => setRadius(parseInt(e.target.value || '0', 10))} />
+                  </div>
+                  <div>
+                    <label className="text-sm">Make</label>
+                    <Input value={make} onChange={(e) => setMake(e.target.value)} placeholder="e.g., Toyota" />
+                  </div>
+                  <div>
+                    <label className="text-sm">Model</label>
+                    <Input value={model} onChange={(e) => setModel(e.target.value)} placeholder="e.g., RAV4" />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={runListingsTest} disabled={loadingListings}>
+                    {loadingListings ? 'Searching…' : 'Search Listings'}
+                  </Button>
+                </div>
+                {listingsError && (
+                  <div className="text-sm text-red-500">{listingsError}</div>
+                )}
+                <Separator />
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {listings.map((v, idx) => (
+                    <Card key={idx} className="border-border">
+                      <div className="relative">
+                        <Image src={v.image || '/placeholder.svg'} alt={`${v.year} ${v.make} ${v.model}`} width={300} height={200} className="w-full h-40 object-cover rounded-t-lg" unoptimized />
+                        <Badge className="absolute top-2 right-2">{v.condition || 'Used'}</Badge>
+                      </div>
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <h4 className="font-semibold">{v.year} {v.make} {v.model}</h4>
+                            <p className="text-lg font-bold text-accent">${(v.price || 0).toLocaleString()}</p>
+                            <p className="text-xs text-muted-foreground">{v.city}, {v.state} {v.zip}</p>
+                          </div>
+                        </div>
+                        <div className="text-xs text-muted-foreground">Dealer: {v.dealerName || v.dealerId || '—'}</div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

@@ -126,10 +126,15 @@ export default function CarDetailPage({ params }: PageProps) {
               <div className="aspect-video rounded-lg overflow-hidden relative">
                 <Image
                   src={car.images[0] || "/placeholder.svg"}
-                  alt={`${car.year} ${car.make} ${car.model}`}
+                  alt={`${car.year} ${car.make ?? ""} ${car.model ?? ""}`}
                   width={600}
                   height={400}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    const img = e.currentTarget as HTMLImageElement
+                    img.onerror = null
+                    img.src = "/placeholder.svg"
+                  }}
                 />
                 <Badge
                   variant="secondary"
@@ -143,10 +148,15 @@ export default function CarDetailPage({ params }: PageProps) {
                   <div key={index} className="aspect-video rounded-lg overflow-hidden">
                     <Image
                       src={image || "/placeholder.svg"}
-                      alt={`${car.year} ${car.make} ${car.model} view ${index + 2}`}
+                      alt={`${car.year} ${car.make ?? ""} ${car.model ?? ""} view ${index + 2}`}
                       width={200}
                       height={133}
                       className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                      onError={(e) => {
+                        const img = e.currentTarget as HTMLImageElement
+                        img.onerror = null
+                        img.src = "/placeholder.svg"
+                      }}
                     />
                   </div>
                 ))}

@@ -10,6 +10,10 @@ const nextConfig = {
   // Use this to set Nx-specific options
   // See: https://nx.dev/recipes/next/next-config-setup
   nx: {},
+  images: {
+    // Allow external images without optimization to support many dealer/CDN domains
+    unoptimized: true,
+  },
 };
 
 const plugins = [

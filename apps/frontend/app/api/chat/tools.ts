@@ -1,5 +1,6 @@
 import { tool } from 'ai';
 import { z } from 'zod';
+import type { Vehicle } from '@/lib/tools-types';
 
 // Tool for checking vehicle availability for test drives
 export const checkAvailability = tool({
@@ -185,93 +186,157 @@ export const scheduleAppointment = tool({
 
 // Tool for searching vehicle inventory (already being used for general queries)
 export const searchInventory = tool({
-  description: 'Search for vehicles in the inventory based on criteria',
+  description: 'Search for vehicles in the inventory based on criteria and optional location',
   inputSchema: z.object({
-    query: z.string().optional().describe('Search query or keywords'),
-    type: z.string().optional().describe('Vehicle type (SUV, Sedan, Truck, Electric, Hybrid, Coupe, Minivan)'),
+    query: z.string().optional().describe('Free text like "2022 Toyota hybrid"'),
+    type: z.string().optional().describe('SUV, Sedan, Truck, Electric, Hybrid, Coupe, Minivan'),
     priceMin: z.number().optional().describe('Minimum price'),
     priceMax: z.number().optional().describe('Maximum price'),
     make: z.string().optional().describe('Vehicle make/brand'),
     model: z.string().optional().describe('Vehicle model'),
+    yearMin: z.number().optional().describe('Minimum model year'),
+    yearMax: z.number().optional().describe('Maximum model year'),
+    location: z.string().optional().describe('City, state, or address (e.g., "Chantilly, VA")'),
+    zip: z.string().optional().describe('ZIP code'),
+    latitude: z.number().optional().describe('Latitude if known'),
+    longitude: z.number().optional().describe('Longitude if known'),
+    radiusMiles: z.number().optional().describe('Search radius in miles (default 25)')
   }),
   execute: async (searchParams) => {
-    // Import mock data directly instead of making HTTP call
-    const { mockVehicles } = await import('@/lib/mock-data');
-    
+    const PROVIDER = process.env.LISTINGS_PROVIDER || 'marketcheck';
+
+    async function geocodeIfNeeded(): Promise<{ lat?: number; lon?: number }> {
+      if (typeof searchParams.latitude === 'number' && typeof searchParams.longitude === 'number') {
+        return { lat: searchParams.latitude, lon: searchParams.longitude };
+      }
+      if (!searchParams.location) return {};
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchParams.location)}`;
+        const res = await fetch(url, { headers: { 'User-Agent': 'ScoutApp/1.0 (contact@example.com)' } });
+        if (!res.ok) return {};
+        const data = await res.json();
+        if (!Array.isArray(data) || data.length === 0) return {};
+        const best = data[0];
+        return { lat: parseFloat(best.lat), lon: parseFloat(best.lon) };
+      } catch {
+        return {};
+      }
+    }
+
+    async function fetchProvider(): Promise<Vehicle[]> {
+      const baseUrl = process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:4200');
+      const res = await fetch(`${baseUrl}/api/tools/listings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          make: searchParams.make,
+          model: searchParams.model,
+          yearMin: searchParams.yearMin,
+          yearMax: searchParams.yearMax,
+          priceMin: searchParams.priceMin,
+          priceMax: searchParams.priceMax,
+          location: searchParams.location,
+          zip: searchParams.zip,
+          latitude: searchParams.latitude,
+          longitude: searchParams.longitude,
+          radiusMiles: searchParams.radiusMiles,
+          limit: 50
+        })
+      });
+      if (!res.ok) throw new Error(`Provider error ${res.status}`);
+      const data = await res.json();
+      return Array.isArray(data?.vehicles) ? data.vehicles : [];
+    }
+
     try {
-      // Start with all vehicles
-      let filteredVehicles = [...mockVehicles];
-      
-      // Apply filters
+      let source: 'marketcheck' | 'mock' = 'marketcheck';
+      let vehicles: Vehicle[] = [];
+      if (PROVIDER) {
+        try {
+          vehicles = await fetchProvider();
+          if (vehicles.length > 0) source = 'marketcheck';
+        } catch (e) {
+          console.error('Listings provider fetch failed:', e);
+        }
+      }
+      // Only fall back to mock data if explicitly allowed via env
+      const allowMockFallback = process.env.ALLOW_MOCK_FALLBACK === 'true' || !PROVIDER;
+      if (vehicles.length === 0 && allowMockFallback) {
+        const { mockVehicles } = await import('@/lib/mock-data');
+        vehicles = [...mockVehicles];
+        source = 'mock';
+      }
+
+      // Local filtering to refine results
       if (searchParams.make) {
-        filteredVehicles = filteredVehicles.filter(v => 
-          v.make.toLowerCase().includes(searchParams.make!.toLowerCase())
-        );
+        vehicles = vehicles.filter(v => v.make.toLowerCase().includes(searchParams.make!.toLowerCase()));
       }
-      
       if (searchParams.model) {
-        filteredVehicles = filteredVehicles.filter(v => 
-          v.model.toLowerCase().includes(searchParams.model!.toLowerCase())
-        );
+        vehicles = vehicles.filter(v => v.model.toLowerCase().includes(searchParams.model!.toLowerCase()));
       }
-      
       if (searchParams.query) {
-        const query = searchParams.query.toLowerCase();
-        filteredVehicles = filteredVehicles.filter(v => 
-          `${v.year} ${v.make} ${v.model}`.toLowerCase().includes(query) ||
-          v.type.toLowerCase().includes(query)
-        );
+        const q = searchParams.query.toLowerCase();
+        vehicles = vehicles.filter(v => `${v.year} ${v.make} ${v.model}`.toLowerCase().includes(q) || v.type.toLowerCase().includes(q));
       }
-      
       if (searchParams.type) {
-        filteredVehicles = filteredVehicles.filter(v => 
-          v.type.toLowerCase() === searchParams.type!.toLowerCase()
-        );
+        vehicles = vehicles.filter(v => v.type.toLowerCase() === searchParams.type!.toLowerCase());
       }
-      
       if (searchParams.priceMin) {
-        filteredVehicles = filteredVehicles.filter(v => v.price >= searchParams.priceMin!);
+        vehicles = vehicles.filter(v => v.price >= searchParams.priceMin!);
       }
-      
       if (searchParams.priceMax) {
-        filteredVehicles = filteredVehicles.filter(v => v.price <= searchParams.priceMax!);
+        vehicles = vehicles.filter(v => v.price <= searchParams.priceMax!);
       }
-      
-      // Sort by availability and stock
-      filteredVehicles.sort((a, b) => {
+      if (searchParams.yearMin) {
+        vehicles = vehicles.filter(v => v.year >= searchParams.yearMin!);
+      }
+      if (searchParams.yearMax) {
+        vehicles = vehicles.filter(v => v.year <= searchParams.yearMax!);
+      }
+      // Optional location radius filter after geocoding
+      const { lat, lon } = await geocodeIfNeeded();
+      if (lat !== undefined && lon !== undefined && (searchParams.radiusMiles ?? 0) > 0) {
+        const toRad = (deg: number) => deg * Math.PI / 180;
+        const R = 3958.8; // miles
+        vehicles = vehicles.filter(v => {
+          if (typeof v.latitude !== 'number' || typeof v.longitude !== 'number') return true;
+          const dLat = toRad(v.latitude - lat);
+          const dLon = toRad(v.longitude - lon);
+          const a = Math.sin(dLat/2) ** 2 + Math.cos(toRad(lat)) * Math.cos(toRad(v.latitude)) * Math.sin(dLon/2) ** 2;
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          const dist = R * c;
+          return dist <= (searchParams.radiusMiles ?? 25);
+        });
+      }
+
+      // Sort by availability, stock, then price
+      vehicles.sort((a, b) => {
         if (a.available && !b.available) return -1;
         if (!a.available && b.available) return 1;
         if (a.stock > b.stock) return -1;
         if (a.stock < b.stock) return 1;
         return a.price - b.price;
       });
-      
-      // Limit results for chat context
-      const limitedVehicles = filteredVehicles.slice(0, 10);
-      
-      // Build response message
+
+      const limited = vehicles.slice(0, 10);
       let message = '';
-      if (filteredVehicles.length === 0) {
-        message = 'No vehicles found matching your criteria.';
-      } else if (filteredVehicles.length === 1) {
-        const v = filteredVehicles[0];
+      if (vehicles.length === 0) message = 'No vehicles found matching your criteria.';
+      else if (vehicles.length === 1) {
+        const v = vehicles[0];
         message = `Found 1 vehicle: ${v.year} ${v.make} ${v.model} for $${v.price.toLocaleString()}`;
       } else {
-        message = `Found ${filteredVehicles.length} vehicles matching your criteria`;
+        const prices = vehicles.map(v => v.price);
+        const minP = Math.min(...prices);
+        const maxP = Math.max(...prices);
+        message = `Found ${vehicles.length} vehicles` + (isFinite(minP) && isFinite(maxP) && minP !== maxP ? ` from $${minP.toLocaleString()} to $${maxP.toLocaleString()}` : '');
       }
-      
-      return {
-        vehicles: limitedVehicles,
-        total: filteredVehicles.length,
-        message
-      };
+
+      return { vehicles: limited, total: vehicles.length, message, source };
     } catch (error) {
       console.error('Error searching inventory:', error);
-      return {
-        vehicles: [],
-        message: 'Failed to search inventory. Please try again.',
-        error: true
-      };
+      return { vehicles: [], message: 'Failed to search inventory. Please try again.', error: true };
     }
   },
 });
