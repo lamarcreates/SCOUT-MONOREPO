@@ -1,6 +1,7 @@
 import { tool } from 'ai';
 import { z } from 'zod';
 import type { Vehicle } from '@/lib/tools-types';
+import { getListingsProvider } from '@/lib/listings-provider';
 
 // Tool for checking vehicle availability for test drives
 export const checkAvailability = tool({
@@ -228,30 +229,23 @@ export const searchInventory = tool({
       if (!searchParams.zip && typeof searchParams.location === 'string' && /^\d{5}$/.test(searchParams.location.trim())) {
         searchParams.zip = searchParams.location.trim();
       }
-      const baseUrl = process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:4200');
-      const res = await fetch(`${baseUrl}/api/tools/listings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          make: searchParams.make,
-          model: searchParams.model,
-          yearMin: searchParams.yearMin,
-          yearMax: searchParams.yearMax,
-          priceMin: searchParams.priceMin,
-          priceMax: searchParams.priceMax,
-          location: searchParams.location,
-          zip: searchParams.zip,
-          latitude: searchParams.latitude,
-          longitude: searchParams.longitude,
-          radiusMiles: searchParams.radiusMiles,
-          limit: 50
-        })
-      });
-      if (!res.ok) throw new Error(`Provider error ${res.status}`);
-      const data = await res.json();
-      return Array.isArray(data?.vehicles) ? data.vehicles : [];
+      // Geocode if needed to supply lat/lon
+      const { lat, lon } = await geocodeIfNeeded();
+      const provider = getListingsProvider();
+      const { vehicles } = await provider.search({
+        make: searchParams.make,
+        model: searchParams.model,
+        yearMin: searchParams.yearMin,
+        yearMax: searchParams.yearMax,
+        priceMin: searchParams.priceMin,
+        priceMax: searchParams.priceMax,
+        latitude: typeof searchParams.latitude === 'number' ? searchParams.latitude : lat,
+        longitude: typeof searchParams.longitude === 'number' ? searchParams.longitude : lon,
+        zip: searchParams.zip as any,
+        radiusMiles: searchParams.radiusMiles,
+        limit: 50,
+      } as any);
+      return vehicles;
     }
 
     try {
