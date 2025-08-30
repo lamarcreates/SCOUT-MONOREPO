@@ -39,10 +39,12 @@ export class MarketCheckProvider implements ListingsProvider {
       url.searchParams.set('zip', String((criteria as any).zip));
       if (criteria.radiusMiles) url.searchParams.set('radius', String(criteria.radiusMiles));
     }
-    if (criteria.priceMin || criteria.priceMax) {
-      const min = criteria.priceMin ?? '';
-      const max = criteria.priceMax ?? '';
-      url.searchParams.set('price_range', `${min || ''}-${max || ''}`);
+    if (criteria.priceMin != null || criteria.priceMax != null) {
+      const hasMin = typeof criteria.priceMin === 'number';
+      const hasMax = typeof criteria.priceMax === 'number';
+      const min = hasMin ? String(criteria.priceMin) : '0';
+      const max = hasMax ? String(criteria.priceMax) : '';
+      url.searchParams.set('price_range', `${min}-${max}`);
     }
 
     const res = await fetch(url.toString(), { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
