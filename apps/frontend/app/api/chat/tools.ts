@@ -224,6 +224,10 @@ export const searchInventory = tool({
     }
 
     async function fetchProvider(): Promise<Vehicle[]> {
+      // Derive zip from numeric location like "20850"
+      if (!searchParams.zip && typeof searchParams.location === 'string' && /^\d{5}$/.test(searchParams.location.trim())) {
+        searchParams.zip = searchParams.location.trim();
+      }
       const baseUrl = process.env.VERCEL_URL
         ? `https://${process.env.VERCEL_URL}`
         : (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:4200');
@@ -256,6 +260,9 @@ export const searchInventory = tool({
       if (PROVIDER) {
         try {
           vehicles = await fetchProvider();
+          console.log('[searchInventory] provider returned', vehicles.length, 'items for', {
+            make: searchParams.make, model: searchParams.model, priceMin: searchParams.priceMin, priceMax: searchParams.priceMax, location: searchParams.location, zip: searchParams.zip
+          });
           if (vehicles.length > 0) source = 'marketcheck';
         } catch (e) {
           console.error('Listings provider fetch failed:', e);
